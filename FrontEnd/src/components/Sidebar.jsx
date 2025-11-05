@@ -8,6 +8,7 @@ export default function Sidebar() {
         <li><Link to="/customers">Customers</Link></li>
         <li><Link to="/deliveries">Deliveries</Link></li>
         <li><Link to="/billing">Billing</Link></li>
+        <li><Link to="/login">Login</Link></li>
       </ul>
     </aside>
   );

@@ -5,6 +5,8 @@ import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import Deliveries from "./pages/Deliveries";
 import Billing from "./pages/Billing";
+import Login from "./pages/Login";
+import { useState } from "react"; 
 
 function App() {
   return (
@@ -18,7 +20,8 @@ function App() {
             <Route path="/customers" element={<Customers />} />
             <Route path="/deliveries" element={<Deliveries />} />
             <Route path="/billing" element={<Billing />} />
-          </Routes>
+            <Route path="/login" element ={<Login/>}></Route>
+          </Routes> 
         </main>
       </div>
     </Router>

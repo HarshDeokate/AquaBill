@@ -1,53 +1,57 @@
 import { useState } from "react";
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function Billing() {
-  // Mock customers
   const customersList = [
     { id: 1, name: "ABC Company", rate: 30 },
     { id: 2, name: "XYZ Traders", rate: 25 }
   ];
 
-  // Mock deliveries
-  const deliveriesList = [
-    { customerId: 1, date: "2025-08-01", jars: 10 },
-    { customerId: 1, date: "2025-08-03", jars: 12 },
-    { customerId: 2, date: "2025-08-02", jars: 15 }
-  ];
-
   const [customerId, setCustomerId] = useState("");
   const [month, setMonth] = useState("");
-  const [totalJars, setTotalJars] = useState(0);
-  const [totalAmount, setTotalAmount] = useState(0);
+  const [billData, setBillData] = useState(null);
 
-  const handleGenerateBill = () => {
+  const handleGenerateBill = async () => {
     if (!customerId || !month) return;
 
-    const selectedCustomer = customersList.find(c => c.id === parseInt(customerId));
-    const filteredDeliveries = deliveriesList.filter(d =>
-      d.customerId === parseInt(customerId) && d.date.startsWith(month)
-    );
+    const customer = customersList.find(c => c.id === parseInt(customerId));
 
-    const jarsSum = filteredDeliveries.reduce((sum, d) => sum + d.jars, 0);
-    const amount = jarsSum * selectedCustomer.rate;
+    try {
+      const res = await fetch(
+        `/api/deliveries/billing-data?customerId=${customerId}&month=${month}`
+      );
+      const deliveries = await res.json();
 
-    setTotalJars(jarsSum);
-    setTotalAmount(amount);
+      const totalJars = deliveries.reduce((sum, d) => sum + d.jars, 0);
+      const totalAmount = totalJars * customer.rate;
+
+      setBillData({ customer, deliveries, totalJars, totalAmount });
+    } catch (err) {
+      console.error("Error fetching billing data:", err);
+    }
   };
 
   const handleDownloadPDF = () => {
-    const customer = customersList.find(c => c.id === parseInt(customerId));
+    if (!billData) return;
+    const { customer, deliveries, totalJars, totalAmount } = billData;
     const doc = new jsPDF();
 
-    doc.setFontSize(18);
-    doc.text("Water Jar Invoice", 14, 20);
+    doc.setFontSize(20).text("JarTrack - Monthly Invoice", 14, 20);
+    autoTable(doc, {
+      startY: 30,
+      head: [["Date", "Jars Delivered", "Rate", "Amount"]],
+      body: deliveries.map(d => [
+        d.date,
+        d.jars,
+        `₹${customer.rate}`,
+        `₹${d.jars * customer.rate}`
+      ]),
+    });
 
-    doc.setFontSize(12);
-    doc.text(`Customer: ${customer.name}`, 14, 30);
-    doc.text(`Month: ${month}`, 14, 38);
-    doc.text(`Total Jars: ${totalJars}`, 14, 46);
-    doc.text(`Rate per Jar: ₹${customer.rate}`, 14, 54);
-    doc.text(`Total Amount: ₹${totalAmount}`, 14, 62);
+    let finalY = doc.lastAutoTable.finalY + 10;
+    doc.text(`Total Jars: ${totalJars}`, 14, finalY);
+    doc.text(`Total Amount: ₹${totalAmount}`, 14, finalY + 8);
 
     doc.save(`Invoice-${customer.name}-${month}.pdf`);
   };
@@ -56,44 +60,27 @@ export default function Billing() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Billing</h1>
 
-      {/* Bill Generation Form */}
       <div className="bg-white p-4 rounded-lg shadow max-w-lg space-y-4">
-        <select
-          value={customerId}
-          onChange={(e) => setCustomerId(e.target.value)}
-          className="w-full p-2 border rounded"
-        >
+        <select value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
           <option value="">Select Customer</option>
-          {customersList.map((c) => (
+          {customersList.map(c => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
 
-        <input
-          type="month"
-          value={month}
-          onChange={(e) => setMonth(e.target.value)}
-          className="w-full p-2 border rounded"
-        />
+        <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
 
-        <button
-          onClick={handleGenerateBill}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full"
-        >
+        <button onClick={handleGenerateBill} className="bg-blue-600 text-white px-4 py-2 rounded">
           Generate Bill
         </button>
       </div>
 
-      {/* Bill Result */}
-      {totalJars > 0 && (
+      {billData && (
         <div className="mt-6 bg-green-50 p-4 rounded-lg max-w-lg">
           <h2 className="text-lg font-bold">Bill Summary</h2>
-          <p>Total Jars: {totalJars}</p>
-          <p>Total Amount: ₹{totalAmount}</p>
-          <button
-            onClick={handleDownloadPDF}
-            className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
+          <p>Total Jars: {billData.totalJars}</p>
+          <p>Total Amount: ₹{billData.totalAmount}</p>
+          <button onClick={handleDownloadPDF} className="mt-4 bg-green-600 text-white px-4 py-2 rounded">
             Download PDF
           </button>
         </div>
