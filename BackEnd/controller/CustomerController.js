@@ -2,10 +2,12 @@ import customerModel from "../models/Customer.js";
 
 export const createCustomer = async (req, res) => {
     try {
+    
         const newCustomer = new customerModel(req.body);
         const savedCustomer = await newCustomer.save();
         res.status(201).json(savedCustomer);
     } catch (error) {
+        console.log(error);
         res.status(500).json({ message: error.message });
     }   
 };

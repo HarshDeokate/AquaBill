@@ -1,134 +1,60 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
-const LoginPage = () => {
-  const [username, setuserName] = useState("");
+const Login = () => {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
     try {
       const res = await axios.post("http://localhost:5000/api/auth/login", {
         username,
         password,
       });
-
-      localStorage.setItem("token", res.data.token);
-      setToken(res.data.token);
-      setMessage("Login successful ✅");
-    } catch (err) {
-        console.log(err.message);
-      setMessage("Invalid credentials ❌");
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setToken("");
-    setMessage("Logged out 👋");
-  };
-
-  const handleProtected = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/auth/login", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setMessage(res.data.message + " 🧠");
-    } catch (err) {
-      setMessage("Unauthorized 🚫");
+      login(res.data.token); // updates context + localStorage
+      navigate("/dashboard");
+    } catch {
+      alert("Invalid login!");
     }
   };
 
   return (
-    <div
-      style={{
-        height: "100vh",
-        background: "#1e293b",
-        color: "#fff",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        flexDirection: "column",
-        gap: "20px",
-      }}
-    >
-      <h2>Login 🔐</h2>
-
-      {!token ? (
-        <form
-          onSubmit={handleLogin}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            width: "250px",
-          }}
-        >
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-6">
+      <div className="bg-gray-800/70 backdrop-blur-lg border border-gray-700 rounded-2xl shadow-2xl w-full max-w-md p-8">
+        <h2 className="text-3xl font-bold text-center text-cyan-400 mb-6">
+          AquaBill
+        </h2>
+        <form onSubmit={handleLogin} className="flex flex-col space-y-4">
           <input
-            type="username"
-            placeholder="username"
-            value={username}
-            onChange={(e) => setuserName(e.target.value)}
-            style={{ padding: "10px", borderRadius: "5px", border: "none" ,color:"black"}}
+            type="text"
+            placeholder="Username"
+            className="px-4 py-2 rounded-lg bg-gray-900 text-gray-200 placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition"
+            onChange={(e) => setUsername(e.target.value)}
           />
           <input
             type="password"
             placeholder="Password"
-            value={password}
+            className="px-4 py-2 rounded-lg bg-gray-900 text-gray-200 placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition"
             onChange={(e) => setPassword(e.target.value)}
-            style={{ padding: "10px", borderRadius: "5px", border: "none" ,color:"black" }}
           />
           <button
             type="submit"
-            style={{
-              background: "#2563eb",
-              color: "white",
-              padding: "10px",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
+            className="mt-4 bg-cyan-500 hover:bg-cyan-400 text-gray-900 font-semibold py-2 rounded-lg shadow-md transition-all duration-300 hover:shadow-cyan-500/30"
           >
             Login
           </button>
         </form>
-      ) : (
-        <>
-          <button
-            onClick={handleProtected}
-            style={{
-              background: "#10b981",
-              color: "white",
-              padding: "10px",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-          >
-            Access Protected Route
-          </button>
-          <button
-            onClick={handleLogout}
-            style={{
-              background: "#ef4444",
-              color: "white",
-              padding: "10px",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-          >
-            Logout
-          </button>
-        </>
-      )}
-
-      {message && <p>{message}</p>}
+        <p className="text-center text-gray-400 text-sm mt-6">
+          © {new Date().getFullYear()} Admin Panel — secure & stylish
+        </p>
+      </div>
     </div>
   );
 };
 
-export default LoginPage;
+export default Login;

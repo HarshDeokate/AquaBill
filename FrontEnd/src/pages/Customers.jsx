@@ -1,26 +1,31 @@
 import { useState } from "react";
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input'
+import axios from "axios";
 
 export default function Customers() {
   const [customers, setCustomers] = useState([]);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [rate, setRate] = useState("");
+  const [number ,setNumber] = useState("");
 
-  const handleAddCustomer = (e) => {
+  const handleAddCustomer = async(e) => {
     e.preventDefault();
-    if (!name || !address || !rate) return;
+    if (!name || !address || !rate || !number) {
+      alert("Please fill in all fields.");
+      return;
+    }
 
     const newCustomer = {
-      id: Date.now(),
-      name,
-      address,
-      rate: parseFloat(rate)
+      "name": name,
+      "address": address,
+      "rate": parseFloat(rate),
+      "phone": number
     };
 
+    const res = await axios.post("http://localhost:5000/api/customers/create", newCustomer);
+    console.log(res.data);
     setCustomers([...customers, newCustomer]);
-    setName("");
-    setAddress("");
-    setRate("");
   };
 
   return (
@@ -51,6 +56,13 @@ export default function Customers() {
           placeholder="Rate per Jar"
           value={rate}
           onChange={(e) => setRate(e.target.value)}
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="number"
+          placeholder="Enter phone number"
+          value={number}
+          onChange={(e) => setNumber(e.target.value)}
           className="w-full p-2 border rounded"
         />
         <button

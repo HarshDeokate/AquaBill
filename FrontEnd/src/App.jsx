@@ -1,31 +1,34 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React, { useContext } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthContext } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
-import Sidebar from "./components/Sidebar";
+import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import Deliveries from "./pages/Deliveries";
 import Billing from "./pages/Billing";
-import Login from "./pages/Login";
-import { useState } from "react"; 
 
-function App() {
+const App = () => {
+  const { token } = useContext(AuthContext);
+
   return (
-    <Router>
-      <Navbar />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 bg-white">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/deliveries" element={<Deliveries />} />
-            <Route path="/billing" element={<Billing />} />
-            <Route path="/login" element ={<Login/>}></Route>
-          </Routes> 
-        </main>
-      </div>
-    </Router>
+    <BrowserRouter>
+      {token && <Navbar />}  {/* Show navbar only when logged in */}
+      <Routes>
+        {/* Public Route */}
+        <Route path="/" element={!token ? <Login /> : <Navigate to="/dashboard" />} />
+
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={token ? <Dashboard /> : <Navigate to="/" />} />
+        <Route path="/Customers" element={token ? <Customers /> : <Navigate to="/" />} />
+        <Route path="/Billing" element={token ? <Billing /> : <Navigate to="/" />} />
+        <Route path="/Deliveries" element={token ? <Deliveries /> : <Navigate to="/" />} />
+
+        {/* Catch-all Route */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </BrowserRouter>
   );
-}
+};
 
 export default App;
