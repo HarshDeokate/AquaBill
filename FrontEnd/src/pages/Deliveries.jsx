@@ -1,35 +1,53 @@
 import { useState } from "react";
-
+import { useEffect } from "react";
+import axios from "axios";
 export default function Deliveries() {
-  // Mock customers for now, later we’ll fetch from backend
-  const customersList = [
-    { id: 1, name: "ABC Company" },
-    { id: 2, name: "XYZ Traders" }
-  ];
+  // Mock customers for now, later we’ll fetch from backen
 
   const [deliveries, setDeliveries] = useState([]);
   const [customerId, setCustomerId] = useState("");
   const [date, setDate] = useState("");
   const [jars, setJars] = useState("");
+  const [customersList , setCustomerList] = useState([]);
+
+  useEffect(() => {
+    // Fetch customers from backend
+    const fetchCustomers = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/customers/get");
+        const data = await response.json();
+        setCustomerList(data);
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+      }
+    };
+    fetchCustomers();
+  }, []);
+  
 
   const handleAddDelivery = (e) => {
     e.preventDefault();
-    if (!customerId || !date || !jars) return;
+    if (!customerId || !date || !jars) {
+      alert("Please fill in all fields.");
+      return;
+    }
 
-    const customerName = customersList.find(c => c.id === parseInt(customerId))?.name;
-
-    const newDelivery = {
-      id: Date.now(),
-      customerId: parseInt(customerId),
-      customerName,
+    axios.post("http://localhost:5000/api/deliveries/create", {
+      customerId,
       date,
-      jars: parseInt(jars)
-    };
-
-    setDeliveries([...deliveries, newDelivery]);
-    setCustomerId("");
-    setDate("");
-    setJars("");
+    }).then((res) => {
+      console.log(res.data);
+      const customer = customersList.find(c => c.id === customerId);
+      const newDelivery = {
+        id: res.data.id,
+        customerName: customer ? customer.name : "Unknown",
+        date,
+        jars
+      };
+      setDeliveries([...deliveries, newDelivery]);
+    }).catch((err) => {
+      console.error("Error adding delivery:", err);
+    });
   };
 
   return (
